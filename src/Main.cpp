@@ -80,6 +80,7 @@ int main() {
 	glLinkProgram(prog);
 	glDeleteShader(vert);
 	glDeleteShader(frag);
+	glUseProgram(prog);
 	delete vertSource;
 	delete fragSource;
 
@@ -100,13 +101,13 @@ int main() {
 	glEnableVertexAttribArray(1);
 
 	glViewport(0, 0, windowWidth, windowHeight);
-	glUseProgram(prog);
+	glEnable(GL_DEPTH_TEST);
 	
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 
 		glClearColor(0.0f, 0.3f, 0.45f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, nullptr);
 
