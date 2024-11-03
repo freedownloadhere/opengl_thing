@@ -162,6 +162,7 @@
     <ClCompile Include="include\glad\glad.c" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\Shader.cpp" />
+    <ClCompile Include="include\stb\stb.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\default.frag" />
