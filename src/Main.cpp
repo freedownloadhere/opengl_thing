@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <cassert>
+#include <algorithm>
 
 #include "Shader.h"
 
@@ -75,8 +76,19 @@ glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
+
+float yaw = -90.0f;
+float pitch = 0.0f;
+
+float lastMouseX = windowWidth / 2;
+float lastMouseY = windowHeight / 2;
+
+bool firstMouse = true;
+
 static void processKeys(GLFWwindow* window) {
-	const float cameraSpeed = 0.05f;
+	const float cameraSpeed = 2.5f * deltaTime;
 
 	if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 		cameraPos += cameraSpeed * cameraFront;
@@ -88,6 +100,35 @@ static void processKeys(GLFWwindow* window) {
 		cameraPos -= cameraSpeed * glm::normalize(glm::cross(cameraFront, cameraUp));
 }
 
+static void mouseCallback(GLFWwindow* window, double mouseX, double mouseY) {
+	if (firstMouse) {
+		lastMouseX = mouseX;
+		lastMouseY = mouseY;
+		firstMouse = false;
+	}
+
+	float deltaMouseX = mouseX - lastMouseX;
+	float deltaMouseY = lastMouseY - mouseY;
+	lastMouseX = mouseX;
+	lastMouseY = mouseY;
+
+	const float sensitivity = 0.1f;
+	deltaMouseX *= sensitivity;
+	deltaMouseY *= sensitivity;
+
+	yaw += deltaMouseX;
+	pitch += deltaMouseY;
+
+	pitch = std::clamp(pitch, -90.0f, 90.0f);
+
+	glm::vec3 direction{};
+	direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	direction.y = sin(glm::radians(pitch));
+	direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+
+	cameraFront = glm::normalize(direction);
+}
+
 int main() {
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -96,6 +137,8 @@ int main() {
 	GLFWwindow* window = glfwCreateWindow(windowWidth, windowHeight, windowTitle, nullptr, nullptr);
 	assert(window);
 	glfwMakeContextCurrent(window);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetCursorPosCallback(window, mouseCallback);
 
 	gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 	gladLoadGL();
@@ -159,6 +202,10 @@ int main() {
 	projection = glm::perspective(glm::radians(45.0f), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
 
 	while (!glfwWindowShouldClose(window)) {
+		float currentFrame = glfwGetTime();
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
+
 		glfwPollEvents();
 		processKeys(window);
 
