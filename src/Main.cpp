@@ -10,12 +10,13 @@
 #include <algorithm>
 
 #include "Shader.h"
+#include "Camera.h"
 
-const int windowWidth = 800;
-const int windowHeight = 600;
-const char* windowTitle = "window";
+static const int windowWidth = 800;
+static const int windowHeight = 600;
+static const char* windowTitle = "window";
 
-float vertices[] = {
+static const float vertices[] = {
 	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
 	 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
 	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
@@ -59,7 +60,7 @@ float vertices[] = {
 	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 };
 
-glm::vec3 cubePositions[] = {
+static const glm::vec3 cubePositions[] = {
     glm::vec3( 0.0f,  0.0f,  0.0f), 
     glm::vec3( 2.0f,  5.0f, -15.0f), 
     glm::vec3(-1.5f, -2.2f, -2.5f),  
@@ -72,61 +73,21 @@ glm::vec3 cubePositions[] = {
     glm::vec3(-1.3f,  1.0f, -1.5f)  
 };
 
-glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+static float deltaTime = 0.0f;
+static float lastFrame = 0.0f;
 
-float deltaTime = 0.0f;
-float lastFrame = 0.0f;
-
-float yaw = -90.0f;
-float pitch = 0.0f;
-
-float lastMouseX = windowWidth / 2;
-float lastMouseY = windowHeight / 2;
-
-bool firstMouse = true;
+static Camera cam;
 
 static void processKeys(GLFWwindow* window) {
-	const float cameraSpeed = 2.5f * deltaTime;
-
-	if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		cameraPos += cameraSpeed * cameraFront;
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		cameraPos -= cameraSpeed * cameraFront;
-	if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		cameraPos += cameraSpeed * glm::normalize(glm::cross(cameraFront, cameraUp));
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		cameraPos -= cameraSpeed * glm::normalize(glm::cross(cameraFront, cameraUp));
+	cam.processKeyboard(window, deltaTime);
 }
 
-static void mouseCallback(GLFWwindow* window, double mouseX, double mouseY) {
-	if (firstMouse) {
-		lastMouseX = mouseX;
-		lastMouseY = mouseY;
-		firstMouse = false;
-	}
+static void mouseCallback(GLFWwindow* window, double x, double y) {
+	cam.processMouse(window, x, y);
+}
 
-	float deltaMouseX = mouseX - lastMouseX;
-	float deltaMouseY = lastMouseY - mouseY;
-	lastMouseX = mouseX;
-	lastMouseY = mouseY;
-
-	const float sensitivity = 0.1f;
-	deltaMouseX *= sensitivity;
-	deltaMouseY *= sensitivity;
-
-	yaw += deltaMouseX;
-	pitch += deltaMouseY;
-
-	pitch = std::clamp(pitch, -90.0f, 90.0f);
-
-	glm::vec3 direction{};
-	direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-	direction.y = sin(glm::radians(pitch));
-	direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-
-	cameraFront = glm::normalize(direction);
+static void scrollCallback(GLFWwindow* window, double x, double y) {
+	cam.processScroll(window, y);
 }
 
 int main() {
@@ -139,6 +100,7 @@ int main() {
 	glfwMakeContextCurrent(window);
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(window, mouseCallback);
+	glfwSetScrollCallback(window, scrollCallback);
 
 	gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 	gladLoadGL();
@@ -198,9 +160,6 @@ int main() {
 	glViewport(0, 0, windowWidth, windowHeight);
 	glEnable(GL_DEPTH_TEST);
 
-	glm::mat4 projection;
-	projection = glm::perspective(glm::radians(45.0f), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
-
 	while (!glfwWindowShouldClose(window)) {
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
@@ -219,16 +178,17 @@ int main() {
 		glBindTexture(GL_TEXTURE_2D, texture2);
 		glBindVertexArray(vao);
 
+		glm::mat4 projection = cam.getPerspective(windowWidth, windowHeight);
+		glm::mat4 view = cam.getViewMat();
 		ourShader.setMat4("projection", projection);
+		ourShader.setMat4("view", view);
 		
 		for (int i = 0; i < 10; i++) {
 			glm::mat4 model = glm::mat4(1.0f);
 			const float rotation = (2.0f * (i % 2) - 1.0f) * (i + 1) * glfwGetTime() * 0.3f;
 			model = glm::translate(model, cubePositions[i]);
 			model = glm::rotate(model, rotation, glm::vec3(0.5f, 1.0f, 0.0f));
-			glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 			ourShader.setMat4("model", model);
-			ourShader.setMat4("view", view);
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
 
