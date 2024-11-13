@@ -1,76 +1,65 @@
 #include "glad/glad.h"
 #include "glfw/glfw3.h"
-#include "stb/stb_image.h"
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
 #include <iostream>
 #include <cassert>
-#include <algorithm>
 
 #include "Shader.h"
 #include "Camera.h"
+#include "Vao.h"
+#include "Vbo.h"
+#include "Ebo.h"
+#include "Texture2D.h"
 
 static const int windowWidth = 800;
 static const int windowHeight = 600;
 static const char* windowTitle = "window";
 
 static const float vertices[] = {
-	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-	 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+	-0.5f, -0.5f, -0.5f,  
+	 0.5f, -0.5f, -0.5f,  
+	 0.5f,  0.5f, -0.5f,  
+	 0.5f,  0.5f, -0.5f,  
+	-0.5f,  0.5f, -0.5f,  
+	-0.5f, -0.5f, -0.5f,  
 
-	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-	 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-	 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-	 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-	-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+	-0.5f, -0.5f,  0.5f,  
+	 0.5f, -0.5f,  0.5f,  
+	 0.5f,  0.5f,  0.5f,  
+	 0.5f,  0.5f,  0.5f,  
+	-0.5f,  0.5f,  0.5f,  
+	-0.5f, -0.5f,  0.5f,  
 
-	-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-	-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-	-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+	-0.5f,  0.5f,  0.5f,  
+	-0.5f,  0.5f, -0.5f,  
+	-0.5f, -0.5f, -0.5f,  
+	-0.5f, -0.5f, -0.5f,  
+	-0.5f, -0.5f,  0.5f,  
+	-0.5f,  0.5f,  0.5f,  
 
-	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+	 0.5f,  0.5f,  0.5f,  
+	 0.5f,  0.5f, -0.5f,  
+	 0.5f, -0.5f, -0.5f,  
+	 0.5f, -0.5f, -0.5f,  
+	 0.5f, -0.5f,  0.5f,  
+	 0.5f,  0.5f,  0.5f,  
 
-	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	 0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-	 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-	 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+	-0.5f, -0.5f, -0.5f,  
+	 0.5f, -0.5f, -0.5f,  
+	 0.5f, -0.5f,  0.5f,  
+	 0.5f, -0.5f,  0.5f,  
+	-0.5f, -0.5f,  0.5f,  
+	-0.5f, -0.5f, -0.5f,  
 
-	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-	-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
-};
-
-static const glm::vec3 cubePositions[] = {
-    glm::vec3( 0.0f,  0.0f,  0.0f), 
-    glm::vec3( 2.0f,  5.0f, -15.0f), 
-    glm::vec3(-1.5f, -2.2f, -2.5f),  
-    glm::vec3(-3.8f, -2.0f, -12.3f),  
-    glm::vec3( 2.4f, -0.4f, -3.5f),  
-    glm::vec3(-1.7f,  3.0f, -7.5f),  
-    glm::vec3( 1.3f, -2.0f, -2.5f),  
-    glm::vec3( 1.5f,  2.0f, -2.5f), 
-    glm::vec3( 1.5f,  0.2f, -1.5f), 
-    glm::vec3(-1.3f,  1.0f, -1.5f)  
+	-0.5f,  0.5f, -0.5f,  
+	 0.5f,  0.5f, -0.5f,  
+	 0.5f,  0.5f,  0.5f,  
+	 0.5f,  0.5f,  0.5f,  
+	-0.5f,  0.5f,  0.5f,  
+	-0.5f,  0.5f, -0.5f
 };
 
 static float deltaTime = 0.0f;
@@ -101,61 +90,31 @@ int main() {
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(window, mouseCallback);
 	glfwSetScrollCallback(window, scrollCallback);
-
 	gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 	gladLoadGL();
 
-	GLuint vbo{}, ebo{}, vao{};
-	Shader ourShader("src/default.vert", "src/default.frag");
+	Shader defShader("shaders/default.vert", "shaders/default.frag");
+	defShader.use();
+	defShader.setVec3("objectColor", glm::vec3(1.0f, 0.5f, 0.31f));
+	defShader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
 
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
+	Shader lightShader("shaders/default.vert", "shaders/light.frag");
 
-	glGenBuffers(1, &vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	Vbo vbo;
+	vbo.bind();
+	vbo.data(vertices, sizeof(vertices));
 
-	//glGenBuffers(1, &ebo);
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	Vao defVao(3 * sizeof(float));
+	defVao.bind();
+	vbo.bind();
+	defVao.attrib(3, GL_FLOAT, sizeof(float));
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)12);
-	glEnableVertexAttribArray(1);
+	Vao lightVao(3 * sizeof(float));
+	lightVao.bind();
+	vbo.bind();
+	lightVao.attrib(3, GL_FLOAT, sizeof(float));
 
-	stbi_set_flip_vertically_on_load(true);
-	int imgWidth{}, imgHeight{}, imgNrCh{};
-	auto data = stbi_load("src/container.jpg", &imgWidth, &imgHeight, &imgNrCh, 0);
-	assert(data && "failed to load image 1");
-	GLuint texture1{};
-	glGenTextures(1, &texture1);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture1);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imgWidth, imgHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-	glGenerateMipmap(GL_TEXTURE_2D);
-	stbi_image_free(data);
-
-	data = stbi_load("src/awesomeface.png", &imgWidth, &imgHeight, &imgNrCh, 0);
-	assert(data && "failed to load image 2");
-	GLuint texture2{};
-	glGenTextures(1, &texture2);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, texture2);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imgWidth, imgHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-	stbi_image_free(data);
-
-	ourShader.use();
-	ourShader.setInt("texture1", 0);
-	ourShader.setInt("texture2", 1);
+	glm::vec3 lightPos = glm::vec3(1.2, 1.0f, 2.0f);
 
 	glViewport(0, 0, windowWidth, windowHeight);
 	glEnable(GL_DEPTH_TEST);
@@ -168,31 +127,26 @@ int main() {
 		glfwPollEvents();
 		processKeys(window);
 
-		glClearColor(0.0f, 0.3f, 0.45f, 1.0f);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		ourShader.use();
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture1);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, texture2);
-		glBindVertexArray(vao);
-
-		glm::mat4 projection = cam.getPerspective(windowWidth, windowHeight);
+		defVao.bind();
+		defShader.use();
+		glm::mat4 model = glm::mat4(1.0f);
 		glm::mat4 view = cam.getViewMat();
-		ourShader.setMat4("projection", projection);
-		ourShader.setMat4("view", view);
-		
-		for (int i = 0; i < 10; i++) {
-			glm::mat4 model = glm::mat4(1.0f);
-			const float rotation = (2.0f * (i % 2) - 1.0f) * (i + 1) * glfwGetTime() * 0.3f;
-			model = glm::translate(model, cubePositions[i]);
-			model = glm::rotate(model, rotation, glm::vec3(0.5f, 1.0f, 0.0f));
-			ourShader.setMat4("model", model);
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-		}
+		glm::mat4 projection = cam.getPerspective(windowWidth, windowHeight);
+		defShader.setMat4("model", model);
+		defShader.setMat4("view", view);
+		defShader.setMat4("projection", projection);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 
-		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+		lightVao.bind();
+		lightShader.use();
+		model = glm::translate(model, lightPos);
+		lightShader.setMat4("model", model);
+		lightShader.setMat4("view", view);
+		lightShader.setMat4("projection", projection);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		glfwSwapBuffers(window);
 	}

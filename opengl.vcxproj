@@ -164,12 +164,17 @@
     <ClCompile Include="include\stb\stb.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\default.frag" />
-    <None Include="src\default.vert" />
+    <None Include="shaders\default.frag" />
+    <None Include="shaders\default.vert" />
+    <None Include="shaders\light.frag" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Camera.h" />
+    <ClInclude Include="src\Ebo.h" />
     <ClInclude Include="src\Shader.h" />
+    <ClInclude Include="src\Texture2D.h" />
+    <ClInclude Include="src\Vao.h" />
+    <ClInclude Include="src\Vbo.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
