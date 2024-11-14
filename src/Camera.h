@@ -76,4 +76,8 @@ public:
 	glm::mat4 getPerspective(float windowWidth, float windowHeight) const {
 		return glm::perspective(glm::radians(fov), windowWidth / windowHeight, 0.1f, 100.0f);
 	}
+
+	glm::vec3 getPosition() const {
+		return cameraPos;
+	}
 };
