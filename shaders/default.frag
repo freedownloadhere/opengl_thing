@@ -8,9 +8,14 @@ struct Material {
 
 struct Light {
 	vec3 position;
+
 	vec3 ambient;
 	vec3 diffuse;
 	vec3 specular;
+
+	float constant;
+	float linear;
+	float quadratic;
 };
 
 in vec3 normal;
@@ -38,7 +43,11 @@ void main() {
 	vec3 diffuse = light.diffuse * diffCos * diffTex;
 	vec3 specular = light.specular * specCos * specTex;
 
+	float d = length(light.position - fragPos);
+	float attenuation = 1.0f / (light.constant + d * light.linear + d * d * light.quadratic);
+
 	vec3 result = ambient + diffuse + specular;
+	result *= attenuation;
 
 	fragColor = vec4(result, 1.0f);
 }
